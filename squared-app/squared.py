@@ -18,13 +18,6 @@ client = Client(
     environment=environment
 )
 
-result = client.merchants.list_merchants()
-
-if result.is_success():
-  print(result.body)
-elif result.is_error():
-  print(result.errors)
-
 @app.route("/")
 @app.route("/home")
 def home():
@@ -32,7 +25,30 @@ def home():
 
 @app.route("/stores")
 def stores():
-    return render_template("stores.html", title="Stores")
+    result = client.locations.list_locations()
+    if result.is_success():
+        stores_list = result.body["locations"]
+    elif result.is_error():
+        print(result.errors)
+    return render_template("stores.html", title="Stores", stores_list=stores_list)
+
+@app.route("/catalog", methods=["GET", "POST"])
+def catalog():
+    items_result = client.catalog.list_catalog(
+    types = "ITEM"
+    )
+    if items_result.is_success():
+        items_list = items_result.body["objects"]
+    elif items_result.is_error():
+        print(items_result.errors)
+    imgs_result = client.catalog.list_catalog(
+    types = "IMAGE"
+    )
+    if imgs_result.is_success():
+        imgs_list = imgs_result.body["objects"]
+    elif imgs_result.is_error():
+        print(imgs_result.errors)
+    return render_template("catalog.html", title="Order", items_list=items_list, imgs_list=imgs_list)
 
 @app.route("/dashboard")
 def dashboard():
