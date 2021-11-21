@@ -33,6 +33,11 @@ def stores():
         print(result.errors)
     return render_template("stores.html", title="Stores", stores_list=stores_list)
 
+@app.template_filter()
+def currencyFormat(value):
+    value = float(value)
+    return "${:,.2f}".format(value)
+
 @app.route("/catalog", methods=["GET", "POST"])
 def catalog():
     items_result = client.catalog.list_catalog()
@@ -51,10 +56,13 @@ def catalog():
         print(imgs_result.errors)
     if request.method == "POST":
         desired_items = {}
+        print(items_list)
         for item in items_list:
-            desired_items[item["item_data"]["name"]] = request.form[item["id"]]
+            quantity = int(request.form[item["id"]])
+            if quantity > 0:
+                desired_items[item["id"]] = request.form[item["id"]]
         print(desired_items)
-        return jsonify(desired_items)
+        return render_template("checkout.html", title="Checkout")
     return render_template("catalog.html", title="Order", items_list=items_list, imgs_list=imgs_list, categories_list=categories_list)
 
 @app.route("/_update_order_summary")
@@ -71,12 +79,16 @@ def _update_order_summary():
             quantity = float(quantities["quantityDict"][item_id])
             if quantity != 0:
                 item_price = item_result.body["object"]["item_data"]["variations"][0]["item_variation_data"]["price_money"]["amount"]
-                summary_dict[item_name] = str(float(quantity) * (float(item_price) / 100))
+                item_total_cost = float(quantity) * (float(item_price) / 100)
+                formatted_total_cost = str("${:,.2f}".format(item_total_cost))
+                summary_dict[item_name] = formatted_total_cost
         elif result.is_error():
             print(result.errors)
-        print(summary_dict)
-        print(jsonify(summary_dict))
     return(jsonify(summary_dict))
+
+@app.route("/checkout")
+def checkout(order):
+    return("<p>Work in progress</p>")
 
 @app.route("/dashboard")
 def dashboard():
