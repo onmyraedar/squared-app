@@ -32,7 +32,7 @@
                 <h5 class="card-title">{{ item.item_data.name }}
                   {% for category in categories_list %}
                     {% if category.id == item.item_data.category_id %}
-                      <span class="badge text-light" style="background-color: #{{ item.item_data.label_color }};">{{ category.category_data.name }}</span>
+                      <span class="badge badge-pill text-light" style="background-color: #{{ item.item_data.label_color }};">{{ category.category_data.name }}</span>
                     {% endif %}
                   {% endfor %}
                 </h5>

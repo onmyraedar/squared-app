@@ -1,9 +1,11 @@
 import json
 import os
+import uuid
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, url_for
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 from square.client import Client
+from urllib.parse import urlencode, parse_qs
 
 app = Flask(__name__)
 secret_key = os.getenv("SECRET_KEY")
@@ -38,8 +40,8 @@ def currencyFormat(value):
     value = float(value)
     return "${:,.2f}".format(value)
 
-@app.route("/catalog", methods=["GET", "POST"])
-def catalog():
+@app.route("/catalog/<string:location_id>", methods=["GET", "POST"])
+def catalog(location_id):
     items_result = client.catalog.list_catalog()
     if items_result.is_success():
         items_list = [item for item in items_result.body["objects"] if item["type"] == "ITEM"]
@@ -56,13 +58,13 @@ def catalog():
         print(imgs_result.errors)
     if request.method == "POST":
         desired_items = {}
-        print(items_list)
         for item in items_list:
             quantity = int(request.form[item["id"]])
             if quantity > 0:
-                desired_items[item["id"]] = request.form[item["id"]]
-        print(desired_items)
-        return render_template("checkout.html", title="Checkout")
+                desired_items[item["item_data"]["variations"][0]["id"]] = request.form[item["id"]]
+        desired_items["location_id"] = location_id
+        encoded_order = urlencode(desired_items)
+        return redirect(url_for("checkout", order_details=encoded_order))
     return render_template("catalog.html", title="Order", items_list=items_list, imgs_list=imgs_list, categories_list=categories_list)
 
 @app.route("/_update_order_summary")
@@ -86,9 +88,47 @@ def _update_order_summary():
             print(result.errors)
     return(jsonify(summary_dict))
 
-@app.route("/checkout")
-def checkout(order):
-    return("<p>Work in progress</p>")
+@app.route("/checkout/<string:order_details>")
+def checkout(order_details):
+    details_dct = parse_qs(order_details)
+    location_id = details_dct["location_id"][0]
+    details_dct.pop("location_id", None)
+    line_items = []
+    for line_item_id, quantity in details_dct.items():
+        line_items.append(
+            {
+                "quantity": quantity[0],
+                "catalog_object_id": line_item_id
+            }
+        )
+    taxes = []
+    tax_result = client.catalog.list_catalog(
+        types = "TAX"
+    )
+    if tax_result.is_success():
+        for tax in tax_result.body["objects"]:
+            taxes.append(
+                {
+                    "catalog_object_id": tax["id"],
+                    "scope": "ORDER"
+                }
+            )
+    elif tax_result.is_error():
+        print(tax_result.errors)
+    calculate_order_result = client.orders.calculate_order(
+        body = {
+            "order": {
+                "location_id": location_id,
+                "line_items": line_items,
+                "taxes": taxes
+            }
+        }
+    )
+    if calculate_order_result.is_success():
+        calculated_order = calculate_order_result.body["order"]
+    elif calculate_order_result.is_error():
+        print(calculate_order_result.errors)
+    return(render_template("checkout.html", title="Checkout", order=calculated_order))
 
 @app.route("/dashboard")
 def dashboard():
