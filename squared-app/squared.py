@@ -1,7 +1,8 @@
+import json
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, render_template, url_for
+from flask import Flask, jsonify, render_template, request, url_for
 from square.client import Client
 
 app = Flask(__name__)
@@ -34,13 +35,13 @@ def stores():
 
 @app.route("/catalog", methods=["GET", "POST"])
 def catalog():
-    items_result = client.catalog.list_catalog(
-    types = "ITEM"
-    )
+    items_result = client.catalog.list_catalog()
     if items_result.is_success():
-        items_list = items_result.body["objects"]
+        items_list = [item for item in items_result.body["objects"] if item["type"] == "ITEM"]
+        categories_list = [item for item in items_result.body["objects"] if item["type"] == "CATEGORY"]
     elif items_result.is_error():
         print(items_result.errors)
+        print(categories_result.errors)
     imgs_result = client.catalog.list_catalog(
     types = "IMAGE"
     )
@@ -48,7 +49,34 @@ def catalog():
         imgs_list = imgs_result.body["objects"]
     elif imgs_result.is_error():
         print(imgs_result.errors)
-    return render_template("catalog.html", title="Order", items_list=items_list, imgs_list=imgs_list)
+    if request.method == "POST":
+        desired_items = {}
+        for item in items_list:
+            desired_items[item["item_data"]["name"]] = request.form[item["id"]]
+        print(desired_items)
+        return jsonify(desired_items)
+    return render_template("catalog.html", title="Order", items_list=items_list, imgs_list=imgs_list, categories_list=categories_list)
+
+@app.route("/_update_order_summary")
+def _update_order_summary():
+    quantities = request.args.get("quantities", "error", type=str)
+    quantities = json.loads(quantities)
+    summary_dict = {}
+    for item_id in quantities["quantityDict"].keys():
+        item_result = client.catalog.retrieve_catalog_object(
+            object_id = item_id
+        )
+        if item_result.is_success():
+            item_name = item_result.body["object"]["item_data"]["name"]
+            quantity = float(quantities["quantityDict"][item_id])
+            if quantity != 0:
+                item_price = item_result.body["object"]["item_data"]["variations"][0]["item_variation_data"]["price_money"]["amount"]
+                summary_dict[item_name] = str(float(quantity) * (float(item_price) / 100))
+        elif result.is_error():
+            print(result.errors)
+        print(summary_dict)
+        print(jsonify(summary_dict))
+    return(jsonify(summary_dict))
 
 @app.route("/dashboard")
 def dashboard():
