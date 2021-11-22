@@ -15,8 +15,40 @@
     </ul>
   </div>
   <div class="d-flex flex-column ml-5">
-    <h3 class="mb-4">Your Dashboard</h3>
-    <p>Join a loyalty program to view your progress here!</p>
+    {% if ambassador_name %}
+    <h3 class="mb-4">{{ ambassador_name }}'s Referral Group</h3>
+    <p class="mb=4">Code: {{ referral_code }}</p>
+    <div class="progress">
+      <div class="progress-bar bg-primary" role="progressbar" style="height: 20px; width: {{ percent }}%">{{ percent }}%</div>
+    </div>
+    <p class="mt-4">Your group is {{ percent }}% of the way to your goal of 20,000 points!</p>
+  </div>
+  <div class="d-flex flex-column mt-5">
+    <table class="table table-hover ml-4 mt-6">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Friend</th>
+          <th scope="col">Points Earned</th>
+          <th scope="col">Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+          {% for key, value in event.items() %}
+            <tr>
+              <td scope="row">{{ key }}</td>
+              <td>{{ value[0] }}</td>
+              <td>{{ value[1] }}</td>
+              <td>{{ value[2] }}</td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>Nothing to see here yet. Go join a referral group!</p>
+    {% endif %}
   </div>
 </div>
 {% endblock content %}

@@ -17,11 +17,11 @@
   <form name="viewOrderSummaryForm" id="viewOrderSummaryForm" method="POST">
     <div class="d-inline-flex flex-column ml-5 col-md-8">
       <h3 class="mb-4">Items to Order</h3>
-      {% for item in items_list %}
+      {% for item in items %}
         <div class="card mb-3">
           <div class="row g-0">
             <div class="col-md-4">
-              {% for img in imgs_list %}
+              {% for img in imgs %}
                 {% if img.id == item.image_id %}
                   <img src="{{ img.image_data.url }}" class="img-thumbnail" style="width: 350px; height: 280px;">
                 {% endif %}
@@ -30,14 +30,14 @@
             <div class="col-md-8">
               <div class="card-body">
                 <h5 class="card-title">{{ item.item_data.name }}
-                  {% for category in categories_list %}
+                  {% for category in categories %}
                     {% if category.id == item.item_data.category_id %}
                       <span class="badge badge-pill text-light" style="background-color: #{{ item.item_data.label_color }};">{{ category.category_data.name }}</span>
                     {% endif %}
                   {% endfor %}
                 </h5>
                 <p class="card-text">{{ item.item_data.description }}</p>
-                <p class="card-text"><strong>{{ (item.item_data.variations.0.item_variation_data.price_money.amount / 100) | currencyFormat }}</strong></p>
+                <p class="card-text"><strong>{{ ( item.item_data.variations.0.item_variation_data.price_money.amount / 100) | currencyFormat }}</strong></p>
                 <div class="mb-3">
                   <label for="{{ item.id }}" class="form-label">Quantity</label>
                   <input type="number" class="form-control quantity-selector" id="{{ item.id }}" name="{{ item.id }}" min="0" step="1" value="0">
