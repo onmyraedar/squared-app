@@ -3,40 +3,9 @@
 <div class="container">
   <div class="row mt-3">
     <div class="col-md-8">
+      <h3>Loyalty Activity</h3>
       <form method="POST" action="">
         {{ form.hidden_tag() }}
-        <h3>Pickup Details</h3>
-        <p>Enter your name and phone number below.</p>
-        <div id="pickupDetailsDiv">
-          <fieldset class="form-group mt-4">
-            <div class="form-group">
-              {{ form.name.label(class="form-control-label") }}
-              {% if form.name.errors %}
-                {{ form.name(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                  {% for error in form.name.errors %}
-                    <span>{{ error }}</span>
-                  {% endfor %}
-                </div>
-              {% else %}
-                {{ form.name(class="form-control form-control-lg") }}
-              {% endif %}
-            </div>
-            <div class="form-group">
-              {{ form.phone_number.label(class="form-control-label") }}
-              {% if form.phone_number.errors %}
-                {{ form.phone_number(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                  {% for error in form.phone_number.errors %}
-                    <span>{{ error }}</span>
-                  {% endfor %}
-                </div>
-              {% else %}
-                {{ form.phone_number(class="form-control form-control-lg") }}
-              {% endif %}
-            </div>
-          </fieldset>
-        </div>
         <div class="form-group">
           {{ form.submit(class="btn btn-dark") }}
         </div>

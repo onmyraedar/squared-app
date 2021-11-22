@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <div class="row mt-3">
+    <div class="col-md-8">
+      <h3>Referrals</h3>
+      <p>We noticed you weren't in any referral groups!</p>
+      <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div id="referralDetailsDiv">
+          <fieldset class="form-group mt-4">
+            <div class="form-group">
+              {{ form.has_referral_code.label(class="form-control-label") }}
+              {% if form.has_referral_code.errors %}
+                {{ form.has_referral_code(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                  {% for error in form.has_referral_code.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+                </div>
+              {% else %}
+                {{ form.has_referral_code(class="form-control form-control-lg") }}
+              {% endif %}
+            </div>
+            <div class="form-group referral-code-form-group" id="referralCodeFormGroup">
+              {{ form.referral_code.label(class="form-control-label") }}
+              {% if form.referral_code.errors %}
+                {{ form.referral_code(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                  {% for error in form.referral_code.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+                </div>
+              {% else %}
+                {{ form.referral_code(class="form-control form-control-lg") }}
+              {% endif %}
+              <button type="button" class="btn btn-danger mb-4 mt-4" id="verifyReferralBtn">Verify Code</button>
+              <div class="alert verification-result-alert" role="alert" id="verificationResultAlert"></div>
+            </div>
+            <div class="form-group join-referral-group-form-group">
+              {{ form.wants_referral_group.label(class="form-control-label") }}
+              {% if form.wants_referral_group.errors %}
+                {{ form.wants_referral_group(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                  {% for error in form.wants_referral_group.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+                </div>
+              {% else %}
+                {{ form.wants_referral_group(class="form-control form-control-lg") }}
+              {% endif %}
+            </div>
+          </fieldset>
+        </div>
+        <div class="form-group" id="referralFormSubmitBtn">
+          {{ form.submit(class="btn btn-dark") }}
+        </div>
+      </form>
+    </div>
+    <div class="flex-col col-md-4">
+      <h3 class="mb-3">Order Details</h3>
+        <ul class="list-group">
+          {% for item in order.line_items %}
+          <li class="list-group-item d-flex justify-content-between">
+            <p>
+              {{ item.name }}
+              <span class="badge badge-pill badge-secondary">{{ item.quantity }}</span>
+            </p>
+            <p>{{ (item.gross_sales_money.amount / 100) | currencyFormat }}</p>
+          </li>
+          {% endfor %}
+          <li class="list-group-item d-flex justify-content-between">
+            <p><strong>Subtotal</strong></p>
+            <p>{{ ((order.total_money.amount - order.total_tax_money.amount) / 100) | currencyFormat }}</p>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <p>Tax</p>
+            <p>{{ ((order.total_tax_money.amount) / 100) | currencyFormat }}</p>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <p><strong>Total</strong></p>
+            <p>{{ ((order.total_money.amount) / 100) | currencyFormat }}</p>
+          </li>
+        </ul>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+{% block scripts %}
+<script charset="utf-8" type="text/javascript">
+  $(function() {
+
+    $("#referralFormSubmitBtn").hide();
+    $(".join-referral-group-form-group").hide();
+
+    $("#referralYesNoField").on("change", function() {
+      if ($(this).val() == "Yes") {
+        $(".referral-code-form-group").show();
+        $("#referralFormSubmitBtn").hide();
+      } else {
+        $(".referral-code-form-group").hide();
+        $(".join-referral-group-form-group").hide();
+        $("#referralFormSubmitBtn").show();
+      }
+    });
+
+    function verifyReferralCode() {
+      var send = {
+        code: $("#referralCodeField").val()
+      }
+      $.getJSON("{{ url_for('_verify_referral') }}", send, function(data) {
+        $("#verificationResultAlert").empty();
+        $("#verificationResultAlert").append(
+          "<p>" + data["result"] + "</p>"
+          );
+        $("#verificationResultAlert").addClass("alert-primary")
+        if ($("div.verification-result-alert:contains('Congratulations')").length > 0) {
+          $(".join-referral-group-form-group").show();
+          $("#referralFormSubmitBtn").show();
+        } else {
+          $(".join-referral-group-form-group").hide();
+          $("#referralFormSubmitBtn").hide();
+        }
+      });
+    }
+
+    $("#verifyReferralBtn").on("click", function() {
+      verifyReferralCode();
+    });
+
+  });
+</script>
+{% endblock scripts %}
